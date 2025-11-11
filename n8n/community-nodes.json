@@ -1,0 +1,10 @@
+{
+  "packages": [
+    {
+      "name": "@n8n/n8n-nodes-langchain",
+      "version": "latest",
+      "description": "LangChain integration for AI workflows"
+    }
+  ]
+}
+

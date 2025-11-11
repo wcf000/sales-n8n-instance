@@ -3,26 +3,47 @@ volumes:
   postgres_storage:
   ollama_storage:
   qdrant_storage:
+  traefik_letsencrypt:
+  redis_storage:
 
 networks:
   demo:
 
 x-n8n: &service-n8n
-  image: n8nio/n8n:latest
+  build:
+    context: ./n8n
+    dockerfile: Dockerfile
   networks: ['demo']
   environment:
     - DB_TYPE=postgresdb
     - DB_POSTGRESDB_HOST=postgres
     - DB_POSTGRESDB_USER=${POSTGRES_USER}
     - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-    - N8N_DIAGNOSTICS_ENABLED=false
-    - N8N_PERSONALIZATION_ENABLED=false
+    - DB_POSTGRESDB_DATABASE=${POSTGRES_DB:-n8n}
+    - N8N_DIAGNOSTICS_ENABLED=${N8N_DIAGNOSTICS_ENABLED:-false}
+    - N8N_PERSONALIZATION_ENABLED=${N8N_PERSONALIZATION_ENABLED:-false}
     - N8N_ENCRYPTION_KEY
     - N8N_USER_MANAGEMENT_JWT_SECRET
+    - N8N_HOST=${N8N_HOST:-0.0.0.0}
+    - N8N_PORT=${N8N_PORT:-5678}
+    - WEBHOOK_URL=${WEBHOOK_URL:-}
     - OLLAMA_HOST=${OLLAMA_HOST:-ollama:11434}
+    - N8N_COMMUNITY_PACKAGES_ENABLED=${N8N_COMMUNITY_PACKAGES_ENABLED:-true}
+    - N8N_COMMUNITY_NODES_INCLUDE=${N8N_COMMUNITY_NODES_INCLUDE:-}
+    - N8N_CORS_ORIGIN=${N8N_CORS_ORIGIN:-}
+    - EXECUTIONS_MODE=${EXECUTIONS_MODE:-regular}
+    - QUEUE_BULL_REDIS_HOST=${QUEUE_BULL_REDIS_HOST:-redis}
+    - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT:-6379}
+    - QUEUE_BULL_REDIS_PASSWORD=${QUEUE_BULL_REDIS_PASSWORD:-}
+    - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB:-0}
   env_file:
     - path: .env
       required: true
+  volumes:
+    - n8n_storage:/home/node/.n8n
+    - ./n8n/demo-data:/demo-data
+    - ./n8n/community-nodes.json:/home/node/.n8n/community-nodes.json:ro
+    - ./shared:/data/shared
 
 x-ollama: &service-ollama
   image: ollama/ollama:latest
@@ -65,6 +86,52 @@ services:
       timeout: 5s
       retries: 10
 
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    hostname: traefik
+    networks: ['demo']
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - traefik_letsencrypt:/letsencrypt
+    environment:
+      - TRAEFIK_DOMAIN=${TRAEFIK_DOMAIN:-n8n.example.com}
+      - TRAEFIK_EMAIL=${TRAEFIK_EMAIL:-admin@example.com}
+      - TRAEFIK_BASIC_AUTH_USER=${TRAEFIK_BASIC_AUTH_USER:-admin}
+      - TRAEFIK_BASIC_AUTH_PASSWORD_HASH=${TRAEFIK_BASIC_AUTH_PASSWORD_HASH:-}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.${TRAEFIK_DOMAIN:-n8n.example.com}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=auth"
+    depends_on:
+      - n8n
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    hostname: redis
+    networks: ['demo']
+    restart: unless-stopped
+    volumes:
+      - redis_storage:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    profiles:
+      - worker
+
   n8n-import:
     <<: *service-n8n
     hostname: n8n-import
@@ -73,8 +140,6 @@ services:
     command:
       - "-c"
       - "n8n import:credentials --separate --input=/demo-data/credentials && n8n import:workflow --separate --input=/demo-data/workflows"
-    volumes:
-      - ./n8n/demo-data:/demo-data
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,16 +150,53 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - 5678:5678
-    volumes:
-      - n8n_storage:/home/node/.n8n
-      - ./n8n/demo-data:/demo-data
-      - ./shared:/data/shared
+      - "5678:5678"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n.rule=Host(`${TRAEFIK_DOMAIN:-n8n.example.com}`)"
+      - "traefik.http.routers.n8n.entrypoints=websecure"
+      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
     depends_on:
       postgres:
         condition: service_healthy
       n8n-import:
         condition: service_completed_successfully
+
+  n8n-main:
+    <<: *service-n8n
+    hostname: n8n-main
+    container_name: n8n-main
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.n8n-main.rule=Host(`${TRAEFIK_DOMAIN:-n8n.example.com}`)"
+      - "traefik.http.routers.n8n-main.entrypoints=websecure"
+      - "traefik.http.routers.n8n-main.tls.certresolver=letsencrypt"
+      - "traefik.http.services.n8n-main.loadbalancer.server.port=5678"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      n8n-import:
+        condition: service_completed_successfully
+    profiles:
+      - worker
+
+  n8n-worker:
+    <<: *service-n8n
+    hostname: n8n-worker
+    container_name: n8n-worker
+    restart: unless-stopped
+    command: worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - worker
 
   qdrant:
     image: qdrant/qdrant

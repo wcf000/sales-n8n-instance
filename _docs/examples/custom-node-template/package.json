@@ -1,0 +1,33 @@
+{
+  "name": "@example/n8n-custom-node-template",
+  "version": "1.0.0",
+  "description": "Template for creating custom n8n nodes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "nodes": [
+      "dist/nodes/ExampleNode/ExampleNode.node.js"
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "n8n",
+    "n8n-node"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "n8n-workflow": "^1.0.0",
+    "n8n-nodes-base": "^1.0.0"
+  }
+}
+

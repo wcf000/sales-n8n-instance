@@ -1,0 +1,22 @@
+# Dynamic configuration for n8n routing
+# Note: Domain and auth are configured via Docker labels in docker-compose.yml
+# This file is kept for reference and additional middleware configuration
+
+http:
+  middlewares:
+    # Rate limiting middleware (optional)
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+
+    # Security headers (optional)
+    security-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Content-Type-Options: "nosniff"
+          X-Frame-Options: "DENY"
+          X-XSS-Protection: "1; mode=block"
+
