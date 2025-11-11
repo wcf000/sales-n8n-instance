@@ -72,6 +72,13 @@ MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
 MINIO_BUCKET=n8n-backups
 MINIO_ENDPOINT_URL=http://minio:9000
+
+# Monitoring Configuration (optional)
+# Enable with: docker compose --profile monitoring up -d
+N8N_METRICS=true
+N8N_METRICS_PORT=5679
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=admin
 ```
 
 ## Generating Required Values

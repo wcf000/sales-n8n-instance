@@ -128,12 +128,15 @@ docker compose --profile cpu up -d
 
 ### Service Ports
 
-- **n8n**: 5678 (internal)
+- **n8n**: 5678 (internal), 5679 (metrics)
 - **PostgreSQL**: Internal only
 - **Redis**: Internal only
 - **Ollama**: 11434
 - **Qdrant**: 6333
 - **Traefik**: 80, 443, 8080
+- **Prometheus**: 9090 (monitoring profile)
+- **Grafana**: 3000 (monitoring profile)
+- **MinIO**: 9000 (API), 9001 (Console) (minio profile)
 
 ## Initial Configuration
 
@@ -217,6 +220,76 @@ docker compose up -d
 ### Database Migrations
 
 n8n handles database migrations automatically on startup.
+
+## Health Checks
+
+### Container Health Status
+
+The n8n container includes a built-in health check that monitors the `/healthz` endpoint:
+
+```bash
+# Check container health
+docker compose ps
+
+# View health check logs
+docker inspect n8n | grep -A 10 Health
+```
+
+### Health Check Configuration
+
+The health check is configured in the Dockerfile:
+- **Interval**: 30 seconds
+- **Timeout**: 10 seconds
+- **Start Period**: 40 seconds (allows time for n8n to start)
+- **Retries**: 3
+
+### Manual Health Check
+
+```bash
+# Test health endpoint
+curl http://localhost:5678/healthz
+
+# From within container
+docker compose exec n8n curl -f http://localhost:5678/healthz
+```
+
+## Monitoring
+
+### Enable Monitoring Stack
+
+Start Prometheus and Grafana with the monitoring profile:
+
+```bash
+docker compose --profile monitoring up -d prometheus grafana
+```
+
+### Access Monitoring
+
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3000
+  - Default credentials: `admin` / `admin` (change on first login)
+
+### n8n Metrics
+
+n8n metrics are automatically exposed when `N8N_METRICS=true` (default):
+- **Metrics Endpoint**: http://n8n:5679/metrics
+- **Scraped by**: Prometheus (when monitoring profile is enabled)
+
+### Grafana Dashboards
+
+Pre-configured dashboards are available:
+- **n8n Platform Monitoring**: Shows execution metrics, error rates, queue size
+
+### Configure Monitoring
+
+Add to `.env`:
+```bash
+# Monitoring
+N8N_METRICS=true
+N8N_METRICS_PORT=5679
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=your-secure-password
+```
 
 ## Troubleshooting
 

@@ -15,6 +15,7 @@ RUN apk add --no-cache \
     openssl-dev \
     postgresql-dev \
     linux-headers \
+    curl \
     && ln -sf python3 /usr/bin/python \
     && ln -sf pip3 /usr/bin/pip
 
@@ -41,4 +42,8 @@ RUN python3 --version && pip3 --version
 # Set Python path
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/usr/bin:$PATH"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:5678/healthz || exit 1
 

@@ -1,0 +1,40 @@
+groups:
+  - name: n8n_alerts
+    interval: 30s
+    rules:
+      - alert: N8nDown
+        expr: up{job="n8n"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "n8n instance is down"
+          description: "n8n instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: N8nHighErrorRate
+        expr: rate(n8n_executions_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in n8n"
+          description: "n8n instance {{ $labels.instance }} has a high error rate: {{ $value }} errors/second"
+
+      - alert: N8nHighExecutionTime
+        expr: histogram_quantile(0.95, rate(n8n_execution_duration_seconds_bucket[5m])) > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High execution time in n8n"
+          description: "95th percentile execution time is {{ $value }} seconds"
+
+      - alert: N8nQueueBacklog
+        expr: n8n_queue_size > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue backlog in n8n"
+          description: "n8n queue has {{ $value }} pending executions"
+
