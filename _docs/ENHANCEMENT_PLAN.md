@@ -592,32 +592,195 @@ Building on the completed foundation, this plan focuses on:
 
 ## Sprint 11: DealScale-Specific Integrations
 
-### 11.1 Pulsar Bridge Optimization
+### 11.1 Replace n8n Queue with Pulsar Bridge Architecture
+
+**Priority**: Critical  
+**Story Points**: 13  
+**Status**: Planned
+
+#### Overview
+Replace n8n's internal BullMQ/Redis queue with a Pulsar bridge for distributed, scalable execution. Keep n8n's built-in queue for UI and short-running flows, use Pulsar for async, long-running, or distributed workloads.
+
+#### Architecture Pattern
+```
+[n8n-main]  →  [REST bridge / Pulsar publisher]
+[n8n-worker] ←  [Pulsar consumer → n8n Webhook trigger]
+```
+
+#### Acceptance Criteria
+- `Given` Pulsar is configured as message bus
+- `When` long-running workflows are triggered
+- `Then` executions are routed through Pulsar bridge
+- `And` n8n's internal queue handles short synchronous workflows
+- `And` Pulsar handles async, distributed, and heavy workloads
+- `And` execution routing is configurable per workflow type
+- `And` backpressure and retries are handled by Pulsar
+- `And` distributed tracing spans n8n → Pulsar → workers
+
+#### Implementation Tasks
+1. Configure queue-optimized settings:
+   - `EXECUTIONS_MODE=queue` (keep for internal Redis queue)
+   - `QUEUE_BULL_REDIS_ENABLED=false` (if not using Redis)
+   - `DEALSCALE_PULSAR_QUEUE_ENABLED=true` (custom flag)
+2. Create FastAPI REST bridge service (`/pulsar/publish` endpoint)
+3. Implement Pulsar publisher in FastAPI bridge
+4. Create Pulsar consumer service that triggers n8n webhooks
+5. Set up Pulsar topic structure:
+   - `dealscale.workflow.short`
+   - `dealscale.workflow.long`
+   - `dealscale.ai.inference`
+   - `dealscale.analytics.events`
+   - `dealscale.deadletter.<topic>` (for failed messages)
+6. Implement message routing logic (short vs long workflows)
+7. Add execution_id and tenant_id to Pulsar message metadata
+8. Configure Pulsar retention (24h) and dead-letter queues
+9. Test bidirectional communication (n8n → Pulsar → n8n)
+10. Document routing strategy and configuration
+
+#### Files to Create/Modify
+- `docker-compose.yml` - Add Pulsar service and FastAPI bridge
+- `pulsar-bridge/app.py` - FastAPI REST bridge with Pulsar publisher
+- `pulsar-bridge/consumer.py` - Pulsar consumer that triggers n8n webhooks
+- `pulsar-bridge/requirements.txt` - Python dependencies (pulsar-client, fastapi)
+- `pulsar/pulsar.conf` - Pulsar broker configuration
+- `_docs/integrations/pulsar-bridge.md` - Comprehensive Pulsar bridge guide
+- `_debug/pulsar-bridge-example.json` - Example workflow using Pulsar
+- `scripts/setup-pulsar-topics.sh` - Topic initialization script
+
+---
+
+### 11.2 Pulsar-Optimized Worker Topology
 
 **Priority**: High  
 **Story Points**: 8  
 **Status**: Planned
 
 #### Acceptance Criteria
-- `Given` Pulsar integration is needed
-- `When` heavy tasks are queued
-- `Then` tasks are sent to Pulsar asynchronously
-- `And` n8n remains responsive
-- `And` task results are retrieved when ready
+- `Given` Pulsar topics are configured
+- `When` workflows are executed
+- `Then` topics are organized by workflow domain
+- `And` each topic has 1 producer (n8n/FastAPI)
+- `And` each topic has 1+ consumers (Python workers, enrichment bots)
+- `And` failed messages are routed to dead-letter topics
+- `And` topics support infinite scaling
 
 #### Implementation Tasks
-1. Create Pulsar integration workflow templates
-2. Document async task patterns
-3. Optimize REST call patterns
-4. Test async processing
+1. Create topic initialization script
+2. Configure topic retention policies
+3. Set up consumer groups for each topic
+4. Implement dead-letter queue routing
+5. Configure topic partitioning for scalability
+6. Test multi-consumer scenarios
+7. Document topic architecture
 
 #### Files to Create/Modify
-- `_docs/integrations/pulsar.md` - Pulsar integration guide
-- `_debug/pulsar-integration-example.json` - Example workflow
+- `scripts/setup-pulsar-topics.sh` - Topic setup script
+- `pulsar-bridge/topics.yml` - Topic configuration
+- `_docs/integrations/pulsar-topology.md` - Topic architecture guide
 
 ---
 
-### 11.2 Qdrant Vector Search Optimization
+### 11.3 Pulsar Security & Fault Isolation
+
+**Priority**: High  
+**Story Points**: 8  
+**Status**: Planned
+
+#### Acceptance Criteria
+- `Given` Pulsar messages are published
+- `When` messages contain sensitive data
+- `Then` messages are signed using HMAC or JWT
+- `And` tenant_id and execution_id are included in claims
+- `And` execution payloads are stored in Postgres (not in Pulsar)
+- `And` only execution IDs are passed in Pulsar messages
+- `And` OAuth2 service accounts authenticate n8n ↔ Pulsar bridge
+- `And` message retention prevents payload bloat
+
+#### Implementation Tasks
+1. Implement HMAC/JWT signing for Pulsar messages
+2. Create payload storage service (Postgres-backed)
+3. Update bridge to store payloads and pass IDs only
+4. Configure OAuth2 service accounts
+5. Set up JWT token validation in consumers
+6. Implement tenant isolation in message routing
+7. Configure message retention policies
+8. Test security and isolation
+
+#### Files to Create/Modify
+- `pulsar-bridge/auth.py` - Authentication and signing
+- `pulsar-bridge/payload-store.py` - Postgres payload storage
+- `scripts/setup-pulsar-auth.sh` - Authentication setup
+- `_docs/integrations/pulsar-security.md` - Security guide
+
+---
+
+### 11.4 Pulsar Observability & Metrics
+
+**Priority**: High  
+**Story Points**: 8  
+**Status**: Planned
+
+#### Acceptance Criteria
+- `Given` Pulsar is running
+- `When` metrics are collected
+- `Then` Pulsar metrics are exported to Prometheus
+- `And` metrics include: message rate, backlog, consumer lag
+- `And` n8n metrics are exported (execution times, queue size)
+- `And` FastAPI bridge metrics are exported (API latency, 2xx/5xx)
+- `And` OpenTelemetry traces correlate n8n execution IDs with Pulsar message IDs
+- `And` Grafana dashboards display unified metrics
+
+#### Implementation Tasks
+1. Configure Pulsar exporter for Prometheus (port 8080)
+2. Configure n8n-prometheus-exporter (port 5679)
+3. Add prometheus-fastapi-instrumentator to FastAPI bridge (port 8000)
+4. Set up OpenTelemetry instrumentation for n8n → Pulsar → workers
+5. Create Grafana dashboard for Pulsar metrics
+6. Create unified dashboard combining n8n + Pulsar + FastAPI metrics
+7. Configure alerting rules for backlog and consumer lag
+8. Document observability setup
+
+#### Files to Create/Modify
+- `docker-compose.yml` - Add Pulsar exporter service
+- `prometheus/pulsar-rules.yml` - Pulsar alerting rules
+- `grafana/dashboards/pulsar-bridge-dashboard.json` - Unified dashboard
+- `pulsar-bridge/otel-config.yml` - OpenTelemetry configuration
+- `_docs/observability.md` - Update with Pulsar metrics section
+
+---
+
+### 11.5 Execution Strategy & Workflow Routing
+
+**Priority**: High  
+**Story Points**: 5  
+**Status**: Planned
+
+#### Acceptance Criteria
+- `Given` workflows are created
+- `When` workflows are executed
+- `Then` routing strategy is applied:
+  - Short synchronous (CRM sync, webhook reply) → Native n8n queue
+  - Long asynchronous (AI enrichment, data pipelines) → Pulsar-routed
+  - Multi-tenant orchestration → Pulsar topics per tenant/workspace
+- `And` routing is configurable per workflow
+- `And` routing decisions are logged
+
+#### Implementation Tasks
+1. Create workflow routing configuration system
+2. Implement routing decision logic
+3. Add workflow metadata for routing (short/long/tenant)
+4. Create routing examples and templates
+5. Document routing strategy
+6. Test routing with various workflow types
+
+#### Files to Create/Modify
+- `pulsar-bridge/routing.py` - Routing decision logic
+- `_docs/integrations/workflow-routing.md` - Routing guide
+- `_debug/routing-examples/` - Example workflows by type
+
+---
+
+### 11.6 Qdrant Vector Search Optimization
 
 **Priority**: High  
 **Story Points**: 8  
@@ -643,7 +806,7 @@ Building on the completed foundation, this plan focuses on:
 
 ---
 
-### 11.3 GraphQL Persisted Queries
+### 11.7 GraphQL Persisted Queries
 
 **Priority**: Medium  
 **Story Points**: 5  
@@ -668,7 +831,7 @@ Building on the completed foundation, this plan focuses on:
 
 ---
 
-### 11.4 AI Workflow Offloading
+### 11.8 AI Workflow Offloading
 
 **Priority**: High  
 **Story Points**: 8  
@@ -706,9 +869,9 @@ Building on the completed foundation, this plan focuses on:
 | Sprint 8 | Developer Experience | Medium | 21 | 2-3 weeks |
 | Sprint 9 | Observability | High | 13 | 2 weeks |
 | Sprint 10 | Workflow Enhancements | High | 26 | 3-4 weeks |
-| Sprint 11 | DealScale Integrations | High | 29 | 3-4 weeks |
+| Sprint 11 | DealScale Integrations (Pulsar Bridge) | Critical | 50 | 5-6 weeks |
 
-**Total**: 162 story points across 8 sprints
+**Total**: 183 story points across 8 sprints
 
 ---
 
@@ -740,6 +903,20 @@ AWS_REGION=
 MINIO_ACCESS_KEY=
 MINIO_SECRET_KEY=
 MINIO_BUCKET=
+
+# Pulsar Bridge
+DEALSCALE_PULSAR_QUEUE_ENABLED=true
+PULSAR_SERVICE_URL=pulsar://pulsar:6650
+PULSAR_HTTP_URL=http://pulsar:8080
+PULSAR_TENANT=dealscale
+PULSAR_NAMESPACE=workflows
+PULSAR_AUTH_TOKEN=
+PULSAR_OAUTH2_ISSUER_URL=
+PULSAR_OAUTH2_AUDIENCE=
+
+# FastAPI Bridge
+FASTAPI_BRIDGE_PORT=8000
+FASTAPI_BRIDGE_WEBHOOK_URL=http://n8n:5678/webhook/pulsar-trigger
 ```
 
 ---
@@ -766,5 +943,74 @@ MINIO_BUCKET=
 
 **Plan Created**: 2025-01-11  
 **Status**: Ready for Implementation  
-**Estimated Timeline**: 16-24 weeks for full implementation
+**Estimated Timeline**: 18-26 weeks for full implementation
+
+---
+
+## Sprint 11 Deep Dive: Pulsar Bridge Architecture
+
+### Why Pulsar Instead of BullMQ?
+
+While n8n officially supports Redis/BullMQ for job queuing, Pulsar provides:
+- **Infinite Scalability**: Beyond Redis memory limits
+- **Durability**: Persistent message storage with retention
+- **Multi-tenancy**: Native tenant/namespace isolation
+- **Dead-letter Queues**: Built-in error handling
+- **Distributed Tracing**: Better observability across services
+- **Topic-based Routing**: Organize by workflow domain
+
+### Execution Strategy Matrix
+
+| Workflow Type | Queue System | Why |
+|--------------|--------------|-----|
+| Short synchronous (CRM sync, webhook reply) | Native n8n queue (Redis/BullMQ) | Needs fast return, low latency |
+| Long asynchronous (AI enrichment, data pipelines) | Pulsar-routed | Heavy compute, retries, scaling |
+| Multi-tenant orchestration | Pulsar topics per tenant/workspace | Isolation, replayability |
+| Real-time UI updates | Native n8n queue | Immediate feedback |
+| Batch processing | Pulsar-routed | Throughput, backpressure handling |
+
+### Pulsar Topic Structure
+
+```
+dealscale.workflow.short      # Fast, synchronous workflows
+dealscale.workflow.long       # Long-running async workflows
+dealscale.ai.inference        # AI/ML inference tasks
+dealscale.analytics.events    # Analytics and event processing
+dealscale.deadletter.<topic>  # Failed message handling
+```
+
+### Message Flow Example
+
+1. **n8n Workflow** → HTTP Request node → `POST /pulsar/publish`
+2. **FastAPI Bridge** → Validates request → Stores payload in Postgres → Publishes to Pulsar topic with execution_id
+3. **Pulsar** → Routes message to consumer → Handles retries/backpressure
+4. **Pulsar Consumer** → Retrieves payload from Postgres → Calls n8n webhook → Triggers workflow
+5. **n8n Webhook** → Receives trigger → Executes workflow → Returns result
+
+### Security Architecture
+
+- **Message Signing**: HMAC or JWT with tenant_id, execution_id claims
+- **Payload Storage**: Postgres (not in Pulsar messages) to prevent bloat
+- **Authentication**: OAuth2 service accounts for n8n ↔ Pulsar bridge
+- **Tenant Isolation**: Separate topics/namespaces per tenant
+- **Retention**: 24h message retention + dead-letter queues
+
+### Observability Stack
+
+```
+n8n (port 5679) → Prometheus → Grafana
+     ↓
+Pulsar (port 8080) → Prometheus → Grafana
+     ↓
+FastAPI Bridge (port 8000) → Prometheus → Grafana
+     ↓
+OpenTelemetry → Tempo/Jaeger → Distributed Traces
+```
+
+### Key Metrics to Monitor
+
+- **n8n**: Execution times, queue size, error rates
+- **Pulsar**: Message rate, backlog, consumer lag, throughput
+- **FastAPI Bridge**: API latency, 2xx/5xx counts, request rate
+- **Correlation**: Execution IDs → Pulsar message IDs → Worker execution IDs
 
