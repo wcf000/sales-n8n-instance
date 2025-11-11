@@ -185,6 +185,7 @@ docker compose create && docker compose up -d
 * 🧑‍💻 [Local Development Guide](_docs/LOCAL_DEVELOPMENT.md) - Development setup
 * ✅ [Implementation Status](_docs/COMPLETION_STATUS.md) - Feature completion status
 * 🎯 [Enhancement Plan](_docs/ENHANCEMENT_PLAN.md) - Next phase roadmap (Sprints 4-11)
+* 📊 [Enhancement Progress](_docs/ENHANCEMENT_PROGRESS.md) - Implementation status tracking
 
 ### 📖 Recommended Reading
 
