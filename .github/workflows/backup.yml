@@ -1,0 +1,83 @@
+name: Database Backup
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Backup environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  BACKUP_RETENTION_DAYS: 30
+
+jobs:
+  backup:
+    name: Backup Database
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    env:
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create backup
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets[format('{0}_HOST', env.ENVIRONMENT)] }}
+          username: ${{ secrets[format('{0}_SSH_USER', env.ENVIRONMENT)] }}
+          key: ${{ secrets[format('{0}_SSH_KEY', env.ENVIRONMENT)] }}
+          script: |
+            cd /opt/n8n-starter-kit || cd ${{ secrets[format('{0}_DEPLOY_PATH', env.ENVIRONMENT)] }}
+            
+            # Create backups directory if it doesn't exist
+            mkdir -p backups
+            
+            # Create timestamped backup
+            BACKUP_FILE="backups/database-$(date +%Y%m%d-%H%M%S).sql.gz"
+            docker compose exec -T postgres pg_dump -U ${{ secrets[format('{0}_POSTGRES_USER', env.ENVIRONMENT)] }} ${{ secrets[format('{0}_POSTGRES_DB', env.ENVIRONMENT)] }} | gzip > "$BACKUP_FILE"
+            
+            # Verify backup was created
+            if [ -f "$BACKUP_FILE" ] && [ -s "$BACKUP_FILE" ]; then
+              echo "✅ Backup created: $BACKUP_FILE"
+              ls -lh "$BACKUP_FILE"
+            else
+              echo "❌ Backup failed or file is empty"
+              exit 1
+            fi
+            
+            # Clean up old backups (keep last N days)
+            find backups -name "database-*.sql.gz" -type f -mtime +${{ env.BACKUP_RETENTION_DAYS }} -delete
+            echo "🧹 Cleaned up backups older than ${{ env.BACKUP_RETENTION_DAYS }} days"
+            
+            # List remaining backups
+            echo "📦 Remaining backups:"
+            ls -lh backups/ | tail -10
+
+      - name: Upload backup to artifact (optional)
+        if: github.event_name == 'workflow_dispatch'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets[format('{0}_HOST', env.ENVIRONMENT)] }}
+          username: ${{ secrets[format('{0}_SSH_USER', env.ENVIRONMENT)] }}
+          key: ${{ secrets[format('{0}_SSH_KEY', env.ENVIRONMENT)] }}
+          source: "backups/database-*.sql.gz"
+          target: "/tmp"
+          strip_components: 0
+
+      - name: Notify backup status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Database backup completed successfully for ${{ env.ENVIRONMENT }}"
+          else
+            echo "❌ Database backup failed for ${{ env.ENVIRONMENT }}"
+          fi
+

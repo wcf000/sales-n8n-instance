@@ -285,6 +285,3 @@ Join the conversation:
 #n8n #AI #selfhosted #automation #workflow #docker #python #ollama #qdrant #postgres #dealscale #realestate #AIagents #nocode #lowcode #opensource
 ```
 
----
-
-Would you like me to **add the SEO-optimized `repo description`, `topics`, and metadata block** (for GitHub’s algorithm + Google rich snippets) next — so it appears on top of search results for *“self-hosted n8n AI stack”* and *“AI workflow automation docker”?*

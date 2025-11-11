@@ -1,0 +1,24 @@
+# Development dependencies for CI/CD pipeline
+# NOTE: This file is kept for backward compatibility
+# For new projects, use: uv sync --all-extras --dev
+# Dependencies are now managed in pyproject.toml
+
+# Testing
+pytest>=7.4.0,<8.0.0
+pytest-asyncio>=0.21.0,<1.0.0
+pytest-cov>=4.1.0,<5.0.0
+pytest-mock>=3.11.0,<4.0.0
+httpx>=0.25.0,<1.0.0
+
+# Linting & Formatting
+ruff>=0.1.0,<1.0.0
+black>=23.0.0,<24.0.0
+
+# Type Checking
+mypy>=1.5.0,<2.0.0
+types-requests>=2.31.0,<3.0.0
+types-python-dateutil>=2.8.0,<3.0.0
+
+# Pre-commit hooks
+pre-commit>=3.5.0,<4.0.0
+
