@@ -177,12 +177,21 @@ docker compose create && docker compose up -d
 
 ---
 
-### 📚 Recommended Reading
+### 📚 Documentation & Updates
+
+* 📖 [Complete Documentation](_docs/) - Comprehensive guides for all features
+* 📝 [Changelog & Updates](_docs/CHANGELOG.md) - Recent changes and updates
+* 🚀 [Quick Start Guide](_docs/QUICKSTART.md) - Get started in minutes
+* 🧑‍💻 [Local Development Guide](_docs/LOCAL_DEVELOPMENT.md) - Development setup
+* ✅ [Implementation Status](_docs/COMPLETION_STATUS.md) - Feature completion status
+
+### 📖 Recommended Reading
 
 * [Build AI Agents in n8n — From Theory to Practice](https://docs.n8n.io/ai)
 * [LangChain Concepts in n8n](https://docs.n8n.io/ai/langchain)
 * [What Are Vector Databases?](https://qdrant.tech/articles/vector-db-basics/)
 * [Ollama Documentation](https://ollama.ai/docs)
+* [OpenRouter Documentation](https://openrouter.ai/docs)
 
 ---
 
