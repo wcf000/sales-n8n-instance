@@ -64,13 +64,17 @@ htpasswd -nb admin yourpassword | sed -e s/\\$/\\$\\$/g
 
 ### 4. Build Custom n8n Image
 
-The custom image includes Python and required packages:
+The custom image includes Python, OpenRouter support, and required packages:
 
 ```bash
 docker compose build n8n
 ```
 
-This may take several minutes as it installs Python and all packages.
+This may take several minutes as it installs Python and all packages including:
+- Python 3.12+
+- OpenAI SDK (compatible with OpenRouter)
+- Anthropic SDK (for Claude)
+- All data processing libraries
 
 ### 5. Start Services
 

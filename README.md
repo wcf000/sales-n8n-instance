@@ -93,12 +93,25 @@ docker compose --profile cpu up -d
 1. Visit [http://localhost:5678](http://localhost:5678) — set up your n8n instance.
 2. Import or create a workflow and click the **Chat** button on the canvas.
 3. Wait for Ollama to finish downloading your model (Llama 3.2 or Mistral).
-4. Run the test command:
+4. **Build the custom n8n image** (includes Python + OpenRouter support):
 
    ```bash
-   python3 -c "import pandas, openai; print('Python runtime ready!')"
+   docker compose build n8n
+   docker compose up -d
    ```
-5. Start building — connect APIs, automate data pipelines, or deploy AI-powered agents.
+
+5. Run the test command:
+
+   ```bash
+   docker compose exec n8n python3 -c "import pandas, openai; print('Python runtime ready!')"
+   ```
+
+6. **Optional: Set up OpenRouter** (for 100+ LLM models):
+   - Get API key from [OpenRouter.ai](https://openrouter.ai/keys)
+   - Add to `.env`: `OPENROUTER_API_KEY=sk-or-v1-your-key`
+   - See `_docs/openrouter-integration.md` for usage examples
+
+7. Start building — connect APIs, automate data pipelines, or deploy AI-powered agents.
 
 ---
 
