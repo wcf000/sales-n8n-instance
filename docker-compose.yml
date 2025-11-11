@@ -10,6 +10,8 @@ volumes:
   minio_storage:
   prometheus_data:
   grafana_data:
+  hasura_metadata:
+  hasura_migrations:
 
 networks:
   demo:
@@ -328,6 +330,70 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
+  hasura:
+    image: hasura/graphql-engine:v2.36.0
+    hostname: hasura
+    container_name: hasura
+    networks: ['demo']
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - HASURA_GRAPHQL_DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-n8n}
+      - HASURA_GRAPHQL_ENABLE_CONSOLE=true
+      - HASURA_GRAPHQL_DEV_MODE=true
+      - HASURA_GRAPHQL_ENABLED_LOG_TYPES=startup,http-log,webhook-log,websocket-log,query-log
+      - HASURA_GRAPHQL_ADMIN_SECRET=${HASURA_GRAPHQL_ADMIN_SECRET:-hasura-admin-secret}
+      - HASURA_GRAPHQL_UNAUTHORIZED_ROLE=anonymous
+      - HASURA_GRAPHQL_ENABLE_REMOTE_SCHEMA_PERMISSIONS=true
+      - HASURA_GRAPHQL_METADATA_DEFAULTS=postgres
+    volumes:
+      - hasura_metadata:/hasura-metadata
+      - hasura_migrations:/hasura-migrations
+      - ./hasura/config.yaml:/hasura-config.yaml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command:
+      - graphql-engine
+      - serve
+      - --server-port
+      - "8080"
+
+  postgraphile:
+    build:
+      context: ./postgraphile
+      dockerfile: Dockerfile
+    hostname: postgraphile
+    container_name: postgraphile
+    networks: ['demo']
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-n8n}
+      - POSTGRAPHILE_SCHEMA=public
+      - POSTGRAPHILE_WATCH=true
+      - POSTGRAPHILE_ENHANCE_GRAPHQL=true
+      - POSTGRAPHILE_SUBSCRIPTIONS=true
+      - POSTGRAPHILE_DYNAMIC_JSON=true
+      - POSTGRAPHILE_SET_OWNER_CONNECTION=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/graphql?query={__typename}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - graphql-alternative
 
   minio:
     image: minio/minio:latest

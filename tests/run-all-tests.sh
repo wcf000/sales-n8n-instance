@@ -80,6 +80,9 @@ run_sprint_test "Sprint 11: Pulsar Bridge & Integrations" "tests/sprint11/test-p
 # Run Integration Tests (pgvector, GraphQL, REST)
 run_sprint_test "Integrations: pgvector, GraphQL, REST" "tests/integrations/test-pgvector-graphql-rest.sh"
 
+# Run Instant GraphQL Engines Tests
+run_sprint_test "Integrations: Instant GraphQL Engines" "tests/integrations/test-instant-graphql-engines.sh"
+
 # Epic-level integration tests
 echo -e "${BLUE}Running Epic Integration Tests...${NC}"
 echo "----------------------------------------"

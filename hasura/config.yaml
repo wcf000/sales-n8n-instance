@@ -1,0 +1,12 @@
+version: 3
+endpoint: http://hasura:8080
+metadata_directory: metadata
+migrations_directory: migrations
+seeds_directory: seeds
+actions:
+  kind: synchronous
+  handler_webhook_baseurl: http://api-bridge:8000
+  codegen:
+    framework: hasura-codegen
+    output_dir: codegen
+

@@ -79,6 +79,9 @@ N8N_METRICS=true
 N8N_METRICS_PORT=5679
 GRAFANA_ADMIN_USER=admin
 GRAFANA_ADMIN_PASSWORD=admin
+
+# Hasura GraphQL Engine Configuration
+HASURA_GRAPHQL_ADMIN_SECRET=changeme_generate_strong_secret_here
 ```
 
 ## Generating Required Values
