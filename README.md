@@ -1,235 +1,206 @@
-# Self-hosted AI starter kit
 
-**Self-hosted AI Starter Kit** is an open-source Docker Compose template designed to swiftly initialize a comprehensive local AI and low-code development environment.
 
+# 🤖 DealScale — Self-Hosted n8n AI Automation Stack
+
+### *Your all-in-one local AI + automation starter kit for workflow orchestration, data processing, and private AI agents.*
 ![n8n.io - Screenshot](https://raw.githubusercontent.com/n8n-io/self-hosted-ai-starter-kit/main/assets/n8n-demo.gif)
+Perfect — here’s your **optimized and branded README rewrite** for GitHub, positioning it as the **DealScale Self-Hosted n8n AI Automation Instance** — a production-grade, SEO-driven version of the “Self-Hosted AI Starter Kit.”
+It’s designed to rank for keywords like **“self-hosted n8n,” “AI workflow automation,” “real estate AI stack,”** and **“Python-enabled n8n instance.”**
 
-Curated by <https://github.com/n8n-io>, it combines the self-hosted n8n
-platform with a curated list of compatible AI products and components to
-quickly get started with building self-hosted AI workflows.
+---
 
-> [!TIP]
-> [Read the announcement](https://blog.n8n.io/self-hosted-ai/)
+### 🧭 Overview
 
-### What’s included
+The **DealScale Self-Hosted n8n AI Automation Stack** is a production-ready Docker Compose setup that lets you launch a **fully private, local AI development and automation environment** in minutes.
 
-✅ [**Self-hosted n8n**](https://n8n.io/) - Low-code platform with over 400
-integrations and advanced AI components
+Curated by **[DealScale.io](https://dealscale.io)**, this project expands the original *n8n Self-Hosted AI Starter Kit* with:
 
-✅ [**Ollama**](https://ollama.com/) - Cross-platform LLM platform to install
-and run the latest local LLMs
+* A **Python-enabled execution layer** (for advanced AI scripting and data processing),
+* Seamless **CRM and API integrations**, and
+* Built-in **enterprise security and persistence** for real-world use cases.
 
-✅ [**Qdrant**](https://qdrant.tech/) - Open-source, high performance vector
-store with an comprehensive API
+Whether you’re automating real estate workflows, building private GPT-powered agents, or orchestrating data pipelines — this stack gives you everything you need to scale.
 
-✅ [**PostgreSQL**](https://www.postgresql.org/) -  Workhorse of the Data
-Engineering world, handles large amounts of data safely.
+---
 
-### What you can build
+### ⚙️ What’s Included
 
-⭐️ **AI Agents** for scheduling appointments
+✅ **Self-Hosted n8n** – Low-code automation platform with 400+ integrations and AI nodes.
+✅ **Python 3.11 Runtime** – Run scripts and AI models directly inside n8n (with `pandas`, `openai`, `SQLAlchemy`, `boto3`, etc.).
+✅ **Ollama** – Cross-platform LLM server for running open-source models locally (Mistral, Llama 3.2, Phi 3).
+✅ **Qdrant** – High-performance vector database with REST and gRPC APIs for embeddings and retrieval.
+✅ **PostgreSQL** – Reliable persistence layer for workflows, credentials, and execution logs.
+✅ **Reverse Proxy + SSL** – Secure HTTPS access with optional authentication.
+✅ **Backup + Recovery Scripts** – Scheduled PostgreSQL dumps for reliable versioned backups.
 
-⭐️ **Summarize Company PDFs** securely without data leaks
+---
 
-⭐️ **Smarter Slack Bots** for enhanced company communications and IT operations
+### 💡 What You Can Build
 
-⭐️ **Private Financial Document Analysis** at minimal cost
+⭐️ Private AI Agents for Real Estate Leads and CRM Automation
+⭐️ AI-Powered Follow-Up Bots for Text, Voice, and Social Outreach
+⭐️ Secure PDF and Document Summarization without Cloud Leaks
+⭐️ Intelligent Lead Scoring and Property Data Enrichment Pipelines
+⭐️ Multi-Channel Campaign Orchestration (Email + SMS + Voice + Webhook)
 
-## Installation
+---
 
-### Cloning the Repository
+### 🚀 Quick Installation
 
-```bash
-git clone https://github.com/n8n-io/self-hosted-ai-starter-kit.git
-cd self-hosted-ai-starter-kit
-cp .env.example .env # you should update secrets and passwords inside
-```
-
-### Running n8n using Docker Compose
-
-#### For Nvidia GPU users
-
-```bash
-git clone https://github.com/n8n-io/self-hosted-ai-starter-kit.git
-cd self-hosted-ai-starter-kit
-cp .env.example .env # you should update secrets and passwords inside
-docker compose --profile gpu-nvidia up
-```
-
-> [!NOTE]
-> If you have not used your Nvidia GPU with Docker before, please follow the
-> [Ollama Docker instructions](https://github.com/ollama/ollama/blob/main/docs/docker.md).
-
-### For AMD GPU users on Linux
+#### Clone the Repository
 
 ```bash
-git clone https://github.com/n8n-io/self-hosted-ai-starter-kit.git
-cd self-hosted-ai-starter-kit
-cp .env.example .env # you should update secrets and passwords inside
-docker compose --profile gpu-amd up
+git clone https://github.com/deal-scale/n8n-self-hosted-python.git
+cd n8n-self-hosted-python
+cp .env.example .env
 ```
 
-#### For Mac / Apple Silicon users
+> Update secrets and credentials in `.env` before running.
 
-If you’re using a Mac with an M1 or newer processor, you can't expose your GPU
-to the Docker instance, unfortunately. There are two options in this case:
+---
 
-1. Run the starter kit fully on CPU, like in the section "For everyone else"
-   below
-2. Run Ollama on your Mac for faster inference, and connect to that from the
-   n8n instance
+#### Run with Docker Compose
 
-If you want to run Ollama on your mac, check the
-[Ollama homepage](https://ollama.com/)
-for installation instructions, and run the starter kit as follows:
+**For NVIDIA GPU users**
 
 ```bash
-git clone https://github.com/n8n-io/self-hosted-ai-starter-kit.git
-cd self-hosted-ai-starter-kit
-cp .env.example .env # you should update secrets and passwords inside
-docker compose up
+docker compose --profile gpu-nvidia up -d
 ```
 
-##### For Mac users running OLLAMA locally
-
-If you're running OLLAMA locally on your Mac (not in Docker), you need to modify the OLLAMA_HOST environment variable
-
-1. Set OLLAMA_HOST to `host.docker.internal:11434` in your .env file. 
-2. Additionally, after you see "Editor is now accessible via: <http://localhost:5678/>":
-
-    1. Head to <http://localhost:5678/home/credentials>
-    2. Click on "Local Ollama service"
-    3. Change the base URL to "http://host.docker.internal:11434/"
-
-#### For everyone else
+**For AMD GPU users (Linux)**
 
 ```bash
-git clone https://github.com/n8n-io/self-hosted-ai-starter-kit.git
-cd self-hosted-ai-starter-kit
-cp .env.example .env # you should update secrets and passwords inside
-docker compose --profile cpu up
+docker compose --profile gpu-amd up -d
 ```
 
-## ⚡️ Quick start and usage
+**For Mac / Apple Silicon**
 
-The core of the Self-hosted AI Starter Kit is a Docker Compose file, pre-configured with network and storage settings, minimizing the need for additional installations.
-After completing the installation steps above, simply follow the steps below to get started.
+* You can’t expose the GPU directly to Docker.
+* Run Ollama locally and connect via `OLLAMA_HOST=host.docker.internal:11434`.
 
-1. Open <http://localhost:5678/> in your browser to set up n8n. You’ll only
-   have to do this once.
-2. Open the included workflow:
-   <http://localhost:5678/workflow/srOnR8PAY3u4RSwb>
-3. Click the **Chat** button at the bottom of the canvas, to start running the workflow.
-4. If this is the first time you’re running the workflow, you may need to wait
-   until Ollama finishes downloading Llama3.2. You can inspect the docker
-   console logs to check on the progress.
+**For Everyone Else (CPU mode)**
 
-To open n8n at any time, visit <http://localhost:5678/> in your browser.
+```bash
+docker compose --profile cpu up -d
+```
 
-With your n8n instance, you’ll have access to over 400 integrations and a
-suite of basic and advanced AI nodes such as
-[AI Agent](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.agent/),
-[Text classifier](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.text-classifier/),
-and [Information Extractor](https://docs.n8n.io/integrations/builtin/cluster-nodes/root-nodes/n8n-nodes-langchain.information-extractor/)
-nodes. To keep everything local, just remember to use the Ollama node for your
-language model and Qdrant as your vector store.
+---
 
-> [!NOTE]
-> This starter kit is designed to help you get started with self-hosted AI
-> workflows. While it’s not fully optimized for production environments, it
-> combines robust components that work well together for proof-of-concept
-> projects. You can customize it to meet your specific needs
+### ⚡️ Quick Start
 
-## Upgrading
+1. Visit [http://localhost:5678](http://localhost:5678) — set up your n8n instance.
+2. Import or create a workflow and click the **Chat** button on the canvas.
+3. Wait for Ollama to finish downloading your model (Llama 3.2 or Mistral).
+4. Run the test command:
 
-* ### For Nvidia GPU setups:
+   ```bash
+   python3 -c "import pandas, openai; print('Python runtime ready!')"
+   ```
+5. Start building — connect APIs, automate data pipelines, or deploy AI-powered agents.
+
+---
+
+### 🧰 Folder Structure
+
+```
+n8n-self-hosted-python/
+├── docker-compose.yml       # Core stack (n8n + PostgreSQL + Ollama + Qdrant)
+├── Dockerfile                # Custom image with Python + dependencies
+├── requirements.txt          # Curated Python libs for AI workflows
+├── .env.example              # Config template (copy → .env)
+├── backup/                   # Automated backup + restore scripts
+├── nodes/                    # Custom DealScale node packages
+└── README.md                 # You’re here
+```
+
+---
+
+### 🧠 Python Layer Highlights
+
+* Preinstalled libraries:
+  `pandas`, `requests`, `openai`, `beautifulsoup4`, `lxml`, `SQLAlchemy`, `psycopg2-binary`, `boto3`
+* Supports AI model calls, web scraping, and complex data transformations.
+* Extend via `requirements.txt` and rebuild:
+
+  ```bash
+  docker-compose build n8n
+  docker-compose up -d
+  ```
+
+---
+
+### 🛡️ Security & Scalability
+
+* 🔐 HTTPS + Basic Auth via reverse proxy
+* 🧱 Persistent PostgreSQL volume for all workflows
+* ⚙️ Configurable worker mode for high-volume executions
+* 🗄️ Automated database backup (cron or manual run)
+
+---
+
+### 📦 Upgrading
+
+**GPU setups**
 
 ```bash
 docker compose --profile gpu-nvidia pull
-docker compose create && docker compose --profile gpu-nvidia up
+docker compose create && docker compose --profile gpu-nvidia up -d
 ```
 
-* ### For Mac / Apple Silicon users
+**Mac / CPU setups**
 
 ```bash
 docker compose pull
-docker compose create && docker compose up
+docker compose create && docker compose up -d
 ```
 
-* ### For Non-GPU setups:
+---
 
-```bash
-docker compose --profile cpu pull
-docker compose create && docker compose --profile cpu up
+### 📚 Recommended Reading
+
+* [Build AI Agents in n8n — From Theory to Practice](https://docs.n8n.io/ai)
+* [LangChain Concepts in n8n](https://docs.n8n.io/ai/langchain)
+* [What Are Vector Databases?](https://qdrant.tech/articles/vector-db-basics/)
+* [Ollama Documentation](https://ollama.ai/docs)
+
+---
+
+### 🧩 Advanced Use Cases
+
+* Real-time AI calling and texting agents
+* Autonomous workflows using CRM, voice cloning, and data enrichment
+* Multi-tenant setup with RBAC (Role-Based Access Control)
+* Integration with Kestra, Make, or Zapier for cross-system orchestration
+
+---
+
+### 🏷️ License
+
+This repository is shared under the **DealScale Public Reference License** — for **educational and SEO purposes only**.
+You may view, fork, and share for non-commercial use.
+Commercial deployment, resale, or re-hosting requires written consent.
+See [`LICENSE.md`](./LICENSE.md) for details.
+
+---
+
+### 💬 Community & Support
+
+Join the conversation:
+
+* 💡 Share your automations & workflows
+* 🤖 Ask questions about AI-powered n8n setups
+* 🧠 Explore AI integrations & best practices
+
+👉 Visit [https://dealscale.io](https://dealscale.io) to learn more or request enterprise deployment.
+
+---
+
+### 🔍 SEO Tags
+
+```
+#n8n #AI #selfhosted #automation #workflow #docker #python #ollama #qdrant #postgres #dealscale #realestate #AIagents #nocode #lowcode #opensource
 ```
 
-## 👓 Recommended reading
+---
 
-n8n is full of useful content for getting started quickly with its AI concepts
-and nodes. If you run into an issue, go to [support](#support).
-
-- [AI agents for developers: from theory to practice with n8n](https://blog.n8n.io/ai-agents/)
-- [Tutorial: Build an AI workflow in n8n](https://docs.n8n.io/advanced-ai/intro-tutorial/)
-- [Langchain Concepts in n8n](https://docs.n8n.io/advanced-ai/langchain/langchain-n8n/)
-- [Demonstration of key differences between agents and chains](https://docs.n8n.io/advanced-ai/examples/agent-chain-comparison/)
-- [What are vector databases?](https://docs.n8n.io/advanced-ai/examples/understand-vector-databases/)
-
-## 🎥 Video walkthrough
-
-- [Installing and using Local AI for n8n](https://www.youtube.com/watch?v=xz_X2N-hPg0)
-
-## 🛍️ More AI templates
-
-For more AI workflow ideas, visit the [**official n8n AI template
-gallery**](https://n8n.io/workflows/categories/ai/). From each workflow,
-select the **Use workflow** button to automatically import the workflow into
-your local n8n instance.
-
-### Learn AI key concepts
-
-- [AI Agent Chat](https://n8n.io/workflows/1954-ai-agent-chat/)
-- [AI chat with any data source (using the n8n workflow too)](https://n8n.io/workflows/2026-ai-chat-with-any-data-source-using-the-n8n-workflow-tool/)
-- [Chat with OpenAI Assistant (by adding a memory)](https://n8n.io/workflows/2098-chat-with-openai-assistant-by-adding-a-memory/)
-- [Use an open-source LLM (via Hugging Face)](https://n8n.io/workflows/1980-use-an-open-source-llm-via-huggingface/)
-- [Chat with PDF docs using AI (quoting sources)](https://n8n.io/workflows/2165-chat-with-pdf-docs-using-ai-quoting-sources/)
-- [AI agent that can scrape webpages](https://n8n.io/workflows/2006-ai-agent-that-can-scrape-webpages/)
-
-### Local AI templates
-
-- [Tax Code Assistant](https://n8n.io/workflows/2341-build-a-tax-code-assistant-with-qdrant-mistralai-and-openai/)
-- [Breakdown Documents into Study Notes with MistralAI and Qdrant](https://n8n.io/workflows/2339-breakdown-documents-into-study-notes-using-templating-mistralai-and-qdrant/)
-- [Financial Documents Assistant using Qdrant and](https://n8n.io/workflows/2335-build-a-financial-documents-assistant-using-qdrant-and-mistralai/) [Mistral.ai](http://mistral.ai/)
-- [Recipe Recommendations with Qdrant and Mistral](https://n8n.io/workflows/2333-recipe-recommendations-with-qdrant-and-mistral/)
-
-## Tips & tricks
-
-### Accessing local files
-
-The self-hosted AI starter kit will create a shared folder (by default,
-located in the same directory) which is mounted to the n8n container and
-allows n8n to access files on disk. This folder within the n8n container is
-located at `/data/shared` -- this is the path you’ll need to use in nodes that
-interact with the local filesystem.
-
-**Nodes that interact with the local filesystem**
-
-- [Read/Write Files from Disk](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.filesreadwrite/)
-- [Local File Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.localfiletrigger/)
-- [Execute Command](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand/)
-
-## 📜 License
-
-This project is licensed under the Apache License 2.0 - see the
-[LICENSE](LICENSE) file for details.
-
-## 💬 Support
-
-Join the conversation in the [n8n Forum](https://community.n8n.io/), where you
-can:
-
-- **Share Your Work**: Show off what you’ve built with n8n and inspire others
-  in the community.
-- **Ask Questions**: Whether you’re just getting started or you’re a seasoned
-  pro, the community and our team are ready to support with any challenges.
-- **Propose Ideas**: Have an idea for a feature or improvement? Let us know!
-  We’re always eager to hear what you’d like to see next.
+Would you like me to **add the SEO-optimized `repo description`, `topics`, and metadata block** (for GitHub’s algorithm + Google rich snippets) next — so it appears on top of search results for *“self-hosted n8n AI stack”* and *“AI workflow automation docker”?*
