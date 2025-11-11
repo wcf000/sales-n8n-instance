@@ -51,6 +51,10 @@ N8N_CORS_ORIGIN=
 # NPM Registry (for custom nodes, optional)
 NPM_REGISTRY=
 NPM_TOKEN=
+
+# OpenRouter API (for LLM model access - optional but recommended)
+# Get your key from: https://openrouter.ai/keys
+OPENROUTER_API_KEY=
 EOF
 
 echo ".env file created successfully!"
