@@ -1,0 +1,94 @@
+{
+  "name": "Test Python Packages & Custom Nodes",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3",
+        "arguments": "-c",
+        "stdin": "import json\nimport sys\n\nresults = {}\n\n# Test all packages\ntry:\n    import pandas as pd\n    results['pandas'] = {'installed': True, 'version': pd.__version__}\nexcept ImportError:\n    results['pandas'] = {'installed': False}\n\ntry:\n    import numpy as np\n    results['numpy'] = {'installed': True, 'version': np.__version__}\nexcept ImportError:\n    results['numpy'] = {'installed': False}\n\ntry:\n    import requests\n    results['requests'] = {'installed': True, 'version': requests.__version__}\nexcept ImportError:\n    results['requests'] = {'installed': False}\n\ntry:\n    import openai\n    results['openai'] = {'installed': True, 'version': openai.__version__}\nexcept ImportError:\n    results['openai'] = {'installed': False}\n\ntry:\n    from bs4 import BeautifulSoup\n    results['beautifulsoup4'] = {'installed': True}\nexcept ImportError:\n    results['beautifulsoup4'] = {'installed': False}\n\ntry:\n    import sqlalchemy\n    results['sqlalchemy'] = {'installed': True, 'version': sqlalchemy.__version__}\nexcept ImportError:\n    results['sqlalchemy'] = {'installed': False}\n\ntry:\n    import boto3\n    results['boto3'] = {'installed': True}\nexcept ImportError:\n    results['boto3'] = {'installed': False}\n\nprint(json.dumps({\n    'status': 'success',\n    'packages': results,\n    'summary': {\n        'total': len(results),\n        'installed': sum(1 for pkg in results.values() if pkg.get('installed', False))\n    }\n}, indent=2))"
+      },
+      "id": "test-packages",
+      "name": "Test All Packages",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3",
+        "arguments": "-c",
+        "stdin": "import json\nimport pandas as pd\nimport sys\n\n# Test Pandas functionality\ndata = {'name': ['Alice', 'Bob', 'Charlie'], 'age': [25, 30, 35], 'score': [85, 90, 95]}\ndf = pd.DataFrame(data)\n\nresult = {\n    'pandas_working': True,\n    'dataframe_rows': len(df),\n    'dataframe_columns': list(df.columns),\n    'average_age': float(df['age'].mean()),\n    'average_score': float(df['score'].mean()),\n    'message': 'Pandas is working correctly!'\n}\n\nprint(json.dumps(result, indent=2))"
+      },
+      "id": "test-pandas",
+      "name": "Test Pandas",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3",
+        "arguments": "-c",
+        "stdin": "import json\nimport requests\n\n# Test Requests library\ntry:\n    response = requests.get('https://httpbin.org/json', timeout=5)\n    result = {\n        'requests_working': True,\n        'status_code': response.status_code,\n        'data': response.json(),\n        'message': 'Requests library is working!'\n    }\nexcept Exception as e:\n    result = {\n        'requests_working': False,\n        'error': str(e)\n    }\n\nprint(json.dumps(result, indent=2))"
+      },
+      "id": "test-requests",
+      "name": "Test Requests",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Test All Packages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test All Packages": {
+      "main": [
+        [
+          {
+            "node": "Test Pandas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Pandas": {
+      "main": [
+        [
+          {
+            "node": "Test Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-01-11T10:00:00.000Z",
+  "versionId": "1"
+}
+

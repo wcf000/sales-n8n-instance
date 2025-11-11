@@ -1,0 +1,38 @@
+/**
+ * Custom CSS for n8n Whitelabeling
+ * This file is injected into n8n's frontend to override default styles
+ */
+
+/* Primary Color Override */
+:root {
+    --color-primary-h: 204;
+    --color-primary-s: 100%;
+    --color-primary-l: 50%;
+    --color-primary: hsl(var(--color-primary-h), var(--color-primary-s), var(--color-primary-l));
+}
+
+/* Logo Customization */
+.logoItem .icon {
+    /* Adjust logo size if needed */
+    height: 18px;
+    width: auto;
+}
+
+/* Custom Brand Colors */
+[data-theme="dark"] {
+    --color-primary-h: 204;
+    --color-primary-s: 100%;
+    --color-primary-l: 50%;
+}
+
+[data-theme="light"] {
+    --color-primary-h: 204;
+    --color-primary-s: 100%;
+    --color-primary-l: 50%;
+}
+
+/* Additional customizations */
+.n8n-branding {
+    /* Add custom branding styles here */
+}
+

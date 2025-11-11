@@ -1,0 +1,9 @@
+# Ignore logo files (add your own)
+*.png
+*.ico
+*.svg
+!logo-template.svg
+
+# Keep directory structure
+!.gitkeep
+
