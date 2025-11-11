@@ -3,7 +3,8 @@
 # Test Suite: Sprint 4 - Storage & Infrastructure Enhancements
 # Tests for persistent storage, S3 backup, and MinIO integration
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'
