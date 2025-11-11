@@ -8,6 +8,11 @@ Perfect — here’s your **optimized and branded README rewrite** for GitHub, p
 It’s designed to rank for keywords like **“self-hosted n8n,” “AI workflow automation,” “real estate AI stack,”** and **“Python-enabled n8n instance.”**
 
 ---
+## 📚 DeepWiki Documentation
+
+For full architecture details, setup notes, and AI workflow patterns for our sales automation stack, see:
+
+[DealScale – Sales n8n Instance (DeepWiki)](https://deepwiki.com/Deal-Scale/sales-n8n-instance)
 
 ### 🧭 Overview
 
