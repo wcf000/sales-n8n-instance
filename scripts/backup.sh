@@ -158,17 +158,184 @@ log_info "Manifest created: $MANIFEST_FILE"
 BACKUP_SIZE=$(du -sh "$BACKUP_DATE_DIR" | cut -f1)
 log_info "Total backup size: $BACKUP_SIZE"
 
-# 7. Cleanup old backups (keep last 30 days)
+# 7. Upload to S3 or MinIO (if configured)
+if [ -n "$AWS_S3_BUCKET" ] || [ -n "$MINIO_BUCKET" ]; then
+    log_info "Uploading backup to cloud storage..."
+    
+    # Determine if using MinIO or AWS S3
+    if [ -n "$MINIO_BUCKET" ]; then
+        # MinIO configuration
+        ENDPOINT_URL="${MINIO_ENDPOINT_URL:-http://minio:9000}"
+        ACCESS_KEY="${MINIO_ROOT_USER:-minioadmin}"
+        SECRET_KEY="${MINIO_ROOT_PASSWORD:-minioadmin}"
+        BUCKET="$MINIO_BUCKET"
+        USE_MINIO=true
+        log_info "Using MinIO: $ENDPOINT_URL"
+    else
+        # AWS S3 configuration
+        ENDPOINT_URL=""
+        ACCESS_KEY="${AWS_ACCESS_KEY_ID}"
+        SECRET_KEY="${AWS_SECRET_ACCESS_KEY}"
+        BUCKET="$AWS_S3_BUCKET"
+        REGION="${AWS_REGION:-us-east-1}"
+        USE_MINIO=false
+        log_info "Using AWS S3: s3://$BUCKET (region: $REGION)"
+    fi
+    
+    # Check if boto3 is available (Python script for S3 upload)
+    if command -v python3 >/dev/null 2>&1; then
+        # Create Python script for S3 upload
+        UPLOAD_SCRIPT=$(mktemp)
+        cat > "$UPLOAD_SCRIPT" <<PYTHON_SCRIPT
+import os
+import sys
+import boto3
+from botocore.exceptions import ClientError
+from pathlib import Path
+
+bucket = "$BUCKET"
+endpoint_url = "$ENDPOINT_URL" if "$ENDPOINT_URL" else None
+access_key = "$ACCESS_KEY"
+secret_key = "$SECRET_KEY"
+backup_dir = "$BACKUP_DATE_DIR"
+timestamp = "$TIMESTAMP"
+region = "${REGION:-us-east-1}"
+
+# Configure S3 client
+s3_config = {
+    'aws_access_key_id': access_key,
+    'aws_secret_access_key': secret_key,
+}
+if endpoint_url:
+    s3_config['endpoint_url'] = endpoint_url
+    s3_config['region_name'] = 'us-east-1'  # MinIO default
+else:
+    s3_config['region_name'] = region
+
+s3_client = boto3.client('s3', **s3_config)
+
+# Upload all files in backup directory
+uploaded_files = []
+failed_files = []
+
+for file_path in Path(backup_dir).rglob('*'):
+    if file_path.is_file():
+        s3_key = f"n8n-backups/{timestamp}/{file_path.relative_to(backup_dir)}"
+        try:
+            s3_client.upload_file(str(file_path), bucket, s3_key)
+            uploaded_files.append(s3_key)
+            print(f"Uploaded: {s3_key}")
+        except ClientError as e:
+            failed_files.append((str(file_path), str(e)))
+            print(f"Failed to upload {file_path}: {e}", file=sys.stderr)
+
+# Update manifest with S3 location
+manifest_path = Path(backup_dir) / f"manifest-{timestamp}.txt"
+if manifest_path.exists():
+    with open(manifest_path, 'a') as f:
+        f.write(f"\\nS3 Location: s3://{bucket}/n8n-backups/{timestamp}/\\n")
+        f.write(f"Uploaded Files: {len(uploaded_files)}\\n")
+
+if failed_files:
+    print(f"Failed to upload {len(failed_files)} file(s)", file=sys.stderr)
+    sys.exit(1)
+else:
+    print(f"Successfully uploaded {len(uploaded_files)} file(s) to s3://{bucket}/n8n-backups/{timestamp}/")
+PYTHON_SCRIPT
+        
+        # Run upload script
+        if python3 "$UPLOAD_SCRIPT" 2>&1; then
+            log_info "Backup uploaded successfully to cloud storage"
+            
+            # Update manifest with S3 location
+            if [ -f "$MANIFEST_FILE" ]; then
+                if [ -n "$MINIO_BUCKET" ]; then
+                    echo "MinIO Location: $ENDPOINT_URL/$MINIO_BUCKET/n8n-backups/$TIMESTAMP/" >> "$MANIFEST_FILE"
+                else
+                    echo "S3 Location: s3://$AWS_S3_BUCKET/n8n-backups/$TIMESTAMP/" >> "$MANIFEST_FILE"
+                fi
+            fi
+        else
+            log_warn "Failed to upload backup to cloud storage (backup still exists locally)"
+        fi
+        
+        rm -f "$UPLOAD_SCRIPT"
+    else
+        log_warn "Python3 not available, skipping cloud upload"
+        log_info "Install Python3 and boto3 to enable cloud backup upload"
+    fi
+fi
+
+# 8. Cleanup old backups (keep last 30 days locally)
 if [ -d "$BACKUP_DIR" ]; then
-    log_info "Cleaning up backups older than 30 days..."
+    log_info "Cleaning up local backups older than 30 days..."
     find "$BACKUP_DIR" -type d -mtime +30 -exec rm -rf {} + 2>/dev/null || true
-    log_info "Cleanup complete"
+    log_info "Local cleanup complete"
+fi
+
+# 9. Cleanup old S3 backups (if configured)
+if [ -n "$AWS_S3_BUCKET" ] || [ -n "$MINIO_BUCKET" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+        log_info "Cleaning up cloud backups older than 30 days..."
+        
+        CLEANUP_SCRIPT=$(mktemp)
+        cat > "$CLEANUP_SCRIPT" <<PYTHON_SCRIPT
+import boto3
+from datetime import datetime, timedelta
+from botocore.exceptions import ClientError
+
+bucket = "$BUCKET"
+endpoint_url = "$ENDPOINT_URL" if "$ENDPOINT_URL" else None
+access_key = "$ACCESS_KEY"
+secret_key = "$SECRET_KEY"
+region = "${REGION:-us-east-1}"
+
+s3_config = {
+    'aws_access_key_id': access_key,
+    'aws_secret_access_key': secret_key,
+}
+if endpoint_url:
+    s3_config['endpoint_url'] = endpoint_url
+    s3_config['region_name'] = 'us-east-1'
+else:
+    s3_config['region_name'] = region
+
+s3_client = boto3.client('s3', **s3_config)
+cutoff_date = datetime.now() - timedelta(days=30)
+
+try:
+    paginator = s3_client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=bucket, Prefix='n8n-backups/')
+    
+    deleted_count = 0
+    for page in pages:
+        if 'Contents' in page:
+            for obj in page['Contents']:
+                if obj['LastModified'].replace(tzinfo=None) < cutoff_date:
+                    s3_client.delete_object(Bucket=bucket, Key=obj['Key'])
+                    deleted_count += 1
+    
+    print(f"Deleted {deleted_count} old backup(s) from cloud storage")
+except ClientError as e:
+    print(f"Error cleaning up cloud backups: {e}", file=sys.stderr)
+PYTHON_SCRIPT
+        
+        python3 "$CLEANUP_SCRIPT" 2>&1 || log_warn "Failed to cleanup old cloud backups"
+        rm -f "$CLEANUP_SCRIPT"
+    fi
 fi
 
 echo ""
 log_info "=== Backup Complete ==="
 log_info "Backup location: $BACKUP_DATE_DIR"
 log_info "Backup size: $BACKUP_SIZE"
+if [ -n "$AWS_S3_BUCKET" ] || [ -n "$MINIO_BUCKET" ]; then
+    if [ -n "$MINIO_BUCKET" ]; then
+        log_info "Cloud location: $ENDPOINT_URL/$MINIO_BUCKET/n8n-backups/$TIMESTAMP/"
+    else
+        log_info "Cloud location: s3://$AWS_S3_BUCKET/n8n-backups/$TIMESTAMP/"
+    fi
+fi
 echo ""
 
 # List backup files

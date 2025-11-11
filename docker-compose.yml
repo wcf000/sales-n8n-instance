@@ -1,10 +1,13 @@
 volumes:
   n8n_storage:
+  n8n_data:
+  n8n_scripts:
   postgres_storage:
   ollama_storage:
   qdrant_storage:
   traefik_letsencrypt:
   redis_storage:
+  minio_storage:
 
 networks:
   demo:
@@ -42,6 +45,8 @@ x-n8n: &service-n8n
       required: true
   volumes:
     - n8n_storage:/home/node/.n8n
+    - n8n_data:/data
+    - n8n_scripts:/root/.n8n/scripts
     - ./n8n/demo-data:/demo-data
     - ./n8n/community-nodes.json:/home/node/.n8n/community-nodes.json:ro
     - ./shared:/data/shared
@@ -251,3 +256,26 @@ services:
     image: ollama/ollama:rocm
     depends_on:
      - ollama-gpu-amd
+
+  minio:
+    image: minio/minio:latest
+    hostname: minio
+    container_name: minio
+    networks: ['demo']
+    restart: unless-stopped
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console UI
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_storage:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    profiles:
+      - minio

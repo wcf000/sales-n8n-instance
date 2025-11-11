@@ -28,17 +28,138 @@ log_warn() {
 
 # Check if backup file/directory is provided
 if [ -z "$1" ]; then
-    log_error "Usage: $0 <backup-file-or-directory> [--database|--volumes|--workflows|--config]"
+    log_error "Usage: $0 <backup-file-or-directory-or-s3-path> [--database|--volumes|--workflows|--config]"
     echo ""
     echo "Examples:"
     echo "  $0 backups/2024-01-15/database-20240115-020000.sql.gz"
     echo "  $0 backups/2024-01-15 --database"
     echo "  $0 backups/2024-01-15 --volumes"
+    echo "  $0 s3://bucket/n8n-backups/20240115-020000/ (downloads from S3 first)"
+    echo "  $0 minio://bucket/n8n-backups/20240115-020000/ (downloads from MinIO first)"
     exit 1
 fi
 
-BACKUP_PATH="$1"
+BACKUP_SOURCE="$1"
 RESTORE_TYPE="${2:-all}"
+
+# Check if backup source is S3/MinIO
+if [[ "$BACKUP_SOURCE" == s3://* ]] || [[ "$BACKUP_SOURCE" == minio://* ]]; then
+    log_info "Detected cloud storage backup source: $BACKUP_SOURCE"
+    
+    # Determine if using MinIO or AWS S3
+    if [[ "$BACKUP_SOURCE" == minio://* ]]; then
+        ENDPOINT_URL="${MINIO_ENDPOINT_URL:-http://minio:9000}"
+        ACCESS_KEY="${MINIO_ROOT_USER:-minioadmin}"
+        SECRET_KEY="${MINIO_ROOT_PASSWORD:-minioadmin}"
+        USE_MINIO=true
+        # Remove minio:// prefix and extract bucket/path
+        S3_PATH="${BACKUP_SOURCE#minio://}"
+    else
+        ENDPOINT_URL=""
+        ACCESS_KEY="${AWS_ACCESS_KEY_ID}"
+        SECRET_KEY="${AWS_SECRET_ACCESS_KEY}"
+        REGION="${AWS_REGION:-us-east-1}"
+        USE_MINIO=false
+        # Remove s3:// prefix
+        S3_PATH="${BACKUP_SOURCE#s3://}"
+    fi
+    
+    # Extract bucket and prefix
+    BUCKET=$(echo "$S3_PATH" | cut -d'/' -f1)
+    PREFIX=$(echo "$S3_PATH" | cut -d'/' -f2-)
+    
+    if [ -z "$BUCKET" ] || [ -z "$PREFIX" ]; then
+        log_error "Invalid S3/MinIO path format. Expected: s3://bucket/path/ or minio://bucket/path/"
+        exit 1
+    fi
+    
+    # Create temporary directory for downloaded backup
+    DOWNLOAD_DIR="${BACKUP_DIR}/s3-download-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$DOWNLOAD_DIR"
+    
+    log_info "Downloading backup from cloud storage..."
+    log_info "Bucket: $BUCKET"
+    log_info "Prefix: $PREFIX"
+    
+    # Download using Python/boto3
+    if command -v python3 >/dev/null 2>&1; then
+        DOWNLOAD_SCRIPT=$(mktemp)
+        cat > "$DOWNLOAD_SCRIPT" <<PYTHON_SCRIPT
+import boto3
+from botocore.exceptions import ClientError
+from pathlib import Path
+import os
+
+bucket = "$BUCKET"
+prefix = "$PREFIX"
+endpoint_url = "$ENDPOINT_URL" if "$ENDPOINT_URL" else None
+access_key = "$ACCESS_KEY"
+secret_key = "$SECRET_KEY"
+download_dir = "$DOWNLOAD_DIR"
+region = "${REGION:-us-east-1}"
+
+s3_config = {
+    'aws_access_key_id': access_key,
+    'aws_secret_access_key': secret_key,
+}
+if endpoint_url:
+    s3_config['endpoint_url'] = endpoint_url
+    s3_config['region_name'] = 'us-east-1'
+else:
+    s3_config['region_name'] = region
+
+s3_client = boto3.client('s3', **s3_config)
+
+try:
+    paginator = s3_client.get_paginator('list_objects_v2')
+    pages = paginator.paginate(Bucket=bucket, Prefix=prefix)
+    
+    downloaded_count = 0
+    for page in pages:
+        if 'Contents' in page:
+            for obj in page['Contents']:
+                # Get relative path from prefix
+                key = obj['Key']
+                relative_path = key[len(prefix):].lstrip('/')
+                
+                if not relative_path:
+                    continue
+                
+                # Create local file path
+                local_path = Path(download_dir) / relative_path
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                # Download file
+                s3_client.download_file(bucket, key, str(local_path))
+                downloaded_count += 1
+                print(f"Downloaded: {relative_path}")
+    
+    print(f"Successfully downloaded {downloaded_count} file(s) to {download_dir}")
+except ClientError as e:
+    print(f"Error downloading from cloud storage: {e}", file=sys.stderr)
+    sys.exit(1)
+PYTHON_SCRIPT
+        
+        if python3 "$DOWNLOAD_SCRIPT" 2>&1; then
+            log_info "Backup downloaded successfully from cloud storage"
+            BACKUP_PATH="$DOWNLOAD_DIR"
+        else
+            log_error "Failed to download backup from cloud storage"
+            rm -rf "$DOWNLOAD_DIR"
+            rm -f "$DOWNLOAD_SCRIPT"
+            exit 1
+        fi
+        
+        rm -f "$DOWNLOAD_SCRIPT"
+    else
+        log_error "Python3 not available. Cannot download from S3/MinIO."
+        log_info "Install Python3 and boto3 to enable cloud backup restore"
+        rm -rf "$DOWNLOAD_DIR"
+        exit 1
+    fi
+else
+    BACKUP_PATH="$BACKUP_SOURCE"
+fi
 
 echo "=== n8n Restore Script ==="
 echo "Backup path: $BACKUP_PATH"

@@ -145,14 +145,59 @@ backups/
 
 ### Remote Storage
 
-#### S3 Backup
+#### AWS S3 Backup
 
-Configure in backup script:
+The backup script automatically uploads to S3 if configured. Add to your `.env` file:
 
 ```bash
-# Upload to S3
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_S3_BUCKET=your-bucket-name
+AWS_REGION=us-east-1
+```
+
+The backup script will:
+- Automatically upload all backup files to `s3://your-bucket/n8n-backups/TIMESTAMP/`
+- Include S3 location in backup manifest
+- Automatically cleanup backups older than 30 days from S3
+
+**Manual S3 Upload:**
+
+```bash
+# Upload to S3 manually
 aws s3 cp backups/ s3://your-bucket/n8n-backups/ --recursive
 ```
+
+#### MinIO Local Object Storage
+
+MinIO provides S3-compatible local storage. Enable it with:
+
+```bash
+# Start MinIO service
+docker compose --profile minio up -d minio
+```
+
+Access MinIO Console at `http://localhost:9001` (default credentials: `minioadmin`/`minioadmin`)
+
+Configure in `.env`:
+
+```bash
+# MinIO Configuration
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_BUCKET=n8n-backups
+MINIO_ENDPOINT_URL=http://minio:9000
+```
+
+The backup script will automatically use MinIO if `MINIO_BUCKET` is set.
+
+**Create MinIO Bucket:**
+
+1. Access MinIO Console: `http://localhost:9001`
+2. Login with credentials
+3. Create bucket: `n8n-backups`
+4. Set bucket policy for backup script access
 
 #### SFTP Backup
 
@@ -220,27 +265,50 @@ curl -X POST https://n8n.example.com/api/v1/workflows \
 3. Select workflow JSON file
 4. Import workflow
 
+### Restore from S3/MinIO
+
+The restore script can download and restore directly from S3 or MinIO:
+
+```bash
+# Restore from AWS S3
+./scripts/restore.sh s3://your-bucket/n8n-backups/20240115-020000/
+
+# Restore from MinIO
+./scripts/restore.sh minio://n8n-backups/n8n-backups/20240115-020000/
+```
+
+The script will:
+1. Download all backup files from cloud storage
+2. Extract to temporary directory
+3. Restore database, volumes, and workflows
+4. Clean up temporary files
+
+**Prerequisites:**
+- Python3 and boto3 installed
+- AWS credentials configured (for S3) or MinIO credentials (for MinIO)
+- Network access to S3/MinIO endpoint
+
 ### Full System Recovery
 
 #### Step 1: Restore Volumes
 
 ```bash
 # Restore all volumes
-./scripts/restore.sh --volumes backups/2024-01-15/volumes-20240115-020000.tar.gz
+./scripts/restore.sh backups/2024-01-15/ --volumes
 ```
 
 #### Step 2: Restore Database
 
 ```bash
 # Restore database
-./scripts/restore.sh --database backups/2024-01-15/database-20240115-020000.sql.gz
+./scripts/restore.sh backups/2024-01-15/ --database
 ```
 
 #### Step 3: Restore Workflows
 
 ```bash
 # Import workflows
-./scripts/restore.sh --workflows backups/2024-01-15/workflows-20240115-020000.json
+./scripts/restore.sh backups/2024-01-15/ --workflows
 ```
 
 #### Step 4: Verify
