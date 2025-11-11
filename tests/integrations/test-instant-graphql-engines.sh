@@ -172,15 +172,15 @@ echo ""
 echo -e "${BLUE}Health Checks${NC}"
 
 if [ -f "docker-compose.yml" ]; then
-    # Check Hasura health check (look for healthcheck in hasura service section)
-    if awk '/hasura:/,/^  [a-z]/ {if (/healthcheck/) found=1} END {exit !found}' docker-compose.yml; then
+    # Check Hasura health check
+    if grep -A 30 "hasura:" docker-compose.yml | grep -q "healthcheck:"; then
         log_pass "Hasura health check configured"
     else
         log_info "Hasura health check not yet configured (planned)"
     fi
     
     # Check PostGraphile health check
-    if awk '/postgraphile:/,/^  [a-z]/ {if (/healthcheck/) found=1} END {exit !found}' docker-compose.yml; then
+    if grep -A 30 "postgraphile:" docker-compose.yml | grep -q "healthcheck:"; then
         log_pass "PostGraphile health check configured"
     else
         log_info "PostGraphile health check not yet configured (planned)"
