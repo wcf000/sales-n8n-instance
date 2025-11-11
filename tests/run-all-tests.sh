@@ -53,6 +53,30 @@ run_sprint_test "Sprint 2: Python Execution & Extensibility" "tests/sprint2/test
 # Run Sprint 3 tests
 run_sprint_test "Sprint 3: Scalability & Reliability" "tests/sprint3/test-scalability-reliability.sh"
 
+# Run Enhancement Plan Sprint 4 tests
+run_sprint_test "Sprint 4: Storage & Infrastructure" "tests/sprint4/test-storage-infrastructure.sh"
+
+# Run Enhancement Plan Sprint 5 tests
+run_sprint_test "Sprint 5: Health & Monitoring" "tests/sprint5/test-health-monitoring.sh"
+
+# Run Enhancement Plan Sprint 6 tests
+run_sprint_test "Sprint 6: Security & Access" "tests/sprint6/test-security-access.sh"
+
+# Run Enhancement Plan Sprint 7 tests
+run_sprint_test "Sprint 7: Performance Optimizations" "tests/sprint7/test-performance.sh"
+
+# Run Enhancement Plan Sprint 8 tests
+run_sprint_test "Sprint 8: Developer Experience" "tests/sprint8/test-developer-experience.sh"
+
+# Run Enhancement Plan Sprint 9 tests
+run_sprint_test "Sprint 9: Observability & Monitoring" "tests/sprint9/test-observability.sh"
+
+# Run Enhancement Plan Sprint 10 tests
+run_sprint_test "Sprint 10: Workflow Enhancements" "tests/sprint10/test-workflow-enhancements.sh"
+
+# Run Enhancement Plan Sprint 11 tests
+run_sprint_test "Sprint 11: Pulsar Bridge & Integrations" "tests/sprint11/test-pulsar-integrations.sh"
+
 # Epic-level integration tests
 echo -e "${BLUE}Running Epic Integration Tests...${NC}"
 echo "----------------------------------------"
