@@ -22,7 +22,8 @@ Python is installed in the n8n Docker container via a custom Dockerfile that:
 
 ### AI & Machine Learning
 
-- **openai** (^1.0.0): OpenAI API client
+- **openai** (^1.0.0): OpenAI API client (compatible with OpenRouter)
+- **anthropic** (^0.34.0): Anthropic Claude API client
 - **langchain** (^0.1.0): LLM application framework (optional)
 
 ### Web Scraping
@@ -279,9 +280,30 @@ See `_debug/test-python-execution.json` for example workflows demonstrating:
 - API calls with requests
 - File operations
 
+## OpenRouter Integration
+
+OpenRouter provides unified access to 100+ LLM models. See `_docs/openrouter-integration.md` for complete guide.
+
+### Quick Example
+
+```python
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=os.environ.get('OPENROUTER_API_KEY')
+)
+
+response = client.chat.completions.create(
+    model="anthropic/claude-3.5-sonnet",
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
 ## Additional Resources
 
 - [Python Documentation](https://docs.python.org/3/)
 - [Pandas Documentation](https://pandas.pydata.org/)
+- [OpenRouter Integration Guide](../openrouter-integration.md)
 - [n8n Execute Command Node](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.executecommand/)
 

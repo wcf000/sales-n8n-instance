@@ -26,7 +26,8 @@ Whether you’re automating real estate workflows, building private GPT-powered 
 ### ⚙️ What’s Included
 
 ✅ **Self-Hosted n8n** – Low-code automation platform with 400+ integrations and AI nodes.
-✅ **Python 3.11 Runtime** – Run scripts and AI models directly inside n8n (with `pandas`, `openai`, `SQLAlchemy`, `boto3`, etc.).
+✅ **Python 3.12 Runtime** – Run scripts and AI models directly inside n8n (with `pandas`, `openai`, `SQLAlchemy`, `boto3`, etc.).
+✅ **OpenRouter Integration** – Built-in support for OpenRouter API to access 100+ LLM models from multiple providers.
 ✅ **Ollama** – Cross-platform LLM server for running open-source models locally (Mistral, Llama 3.2, Phi 3).
 ✅ **Qdrant** – High-performance vector database with REST and gRPC APIs for embeddings and retrieval.
 ✅ **PostgreSQL** – Reliable persistence layer for workflows, credentials, and execution logs.
@@ -42,6 +43,7 @@ Whether you’re automating real estate workflows, building private GPT-powered 
 ⭐️ Secure PDF and Document Summarization without Cloud Leaks
 ⭐️ Intelligent Lead Scoring and Property Data Enrichment Pipelines
 ⭐️ Multi-Channel Campaign Orchestration (Email + SMS + Voice + Webhook)
+⭐️ Multi-Model LLM Workflows via OpenRouter (GPT-4, Claude, Gemini, Llama, etc.)
 
 ---
 
@@ -123,8 +125,9 @@ sales-n8n-instance/
 ### 🧠 Python Layer Highlights
 
 * Preinstalled libraries:
-  `pandas`, `requests`, `openai`, `beautifulsoup4`, `lxml`, `SQLAlchemy`, `psycopg2-binary`, `boto3`
-* Supports AI model calls, web scraping, and complex data transformations.
+  `pandas`, `requests`, `openai`, `anthropic`, `beautifulsoup4`, `lxml`, `SQLAlchemy`, `psycopg2-binary`, `boto3`
+* Supports AI model calls via OpenAI SDK (compatible with OpenRouter), web scraping, and complex data transformations.
+* **OpenRouter Support**: Access 100+ LLM models (GPT-4, Claude, Gemini, Llama, etc.) through unified API.
 * Extend via `requirements.txt` and rebuild:
 
   ```bash

@@ -1,0 +1,69 @@
+{
+  "name": "Test OpenRouter Integration",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node-1234",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3",
+        "arguments": "-c \"import os, json, sys; from openai import OpenAI; api_key = os.environ.get('OPENROUTER_API_KEY'); client = OpenAI(base_url='https://openrouter.ai/api/v1', api_key=api_key) if api_key else None; result = {'success': False, 'error': 'OPENROUTER_API_KEY not set'} if not client else {'success': True, 'message': 'OpenRouter client initialized', 'base_url': 'https://openrouter.ai/api/v1'}; print(json.dumps(result))\""
+      },
+      "id": "test-openrouter-1234",
+      "name": "Test OpenRouter Setup",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "command": "python3",
+        "arguments": "-c \"import os, json, sys; from openai import OpenAI; api_key = os.environ.get('OPENROUTER_API_KEY'); result = {'error': 'API key not set'}; exec('client = OpenAI(base_url=\\\"https://openrouter.ai/api/v1\\\", api_key=api_key); response = client.chat.completions.create(model=\\\"openai/gpt-3.5-turbo\\\", messages=[{\\\"role\\\": \\\"user\\\", \\\"content\\\": \\\"Say hello\\\"}], max_tokens=10); result = {\\\"success\\\": True, \\\"model\\\": response.model, \\\"response\\\": response.choices[0].message.content, \\\"tokens\\\": response.usage.total_tokens}' if api_key else None); print(json.dumps(result))\""
+      },
+      "id": "test-openrouter-api-1234",
+      "name": "Test OpenRouter API Call",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Test OpenRouter Setup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test OpenRouter Setup": {
+      "main": [
+        [
+          {
+            "node": "Test OpenRouter API Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

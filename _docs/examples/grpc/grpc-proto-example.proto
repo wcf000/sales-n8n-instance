@@ -1,0 +1,65 @@
+// Example Protocol Buffer definition for gRPC service
+// Save this as example.proto and generate Python stubs with:
+// python -m grpc_tools.protoc --python_out=. --grpc_python_out=. example.proto
+
+syntax = "proto3";
+
+package example;
+
+// Example service definition
+service ExampleService {
+  // Unary RPC: single request, single response
+  rpc GetData (DataRequest) returns (DataResponse);
+  
+  // Server streaming: single request, stream of responses
+  rpc StreamData (DataRequest) returns (stream DataResponse);
+  
+  // Client streaming: stream of requests, single response
+  rpc CollectData (stream DataRequest) returns (DataResponse);
+  
+  // Bidirectional streaming: stream of requests, stream of responses
+  rpc ChatData (stream DataRequest) returns (stream DataResponse);
+  
+  // Health check endpoint
+  rpc HealthCheck (HealthRequest) returns (HealthResponse);
+}
+
+// Request message
+message DataRequest {
+  string id = 1;
+  string query = 2;
+  int32 limit = 3;
+  map<string, string> metadata = 4;
+}
+
+// Response message
+message DataResponse {
+  string id = 1;
+  string data = 2;
+  int64 timestamp = 3;
+  repeated string items = 4;
+  Status status = 5;
+}
+
+// Status enum
+enum Status {
+  UNKNOWN = 0;
+  SUCCESS = 1;
+  ERROR = 2;
+}
+
+// Health check request
+message HealthRequest {
+  string service = 1;
+}
+
+// Health check response
+message HealthResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}
+

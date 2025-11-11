@@ -36,6 +36,7 @@ x-n8n: &service-n8n
     - QUEUE_BULL_REDIS_PORT=${QUEUE_BULL_REDIS_PORT:-6379}
     - QUEUE_BULL_REDIS_PASSWORD=${QUEUE_BULL_REDIS_PASSWORD:-}
     - QUEUE_BULL_REDIS_DB=${QUEUE_BULL_REDIS_DB:-0}
+    - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
   env_file:
     - path: .env
       required: true
