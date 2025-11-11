@@ -50,9 +50,9 @@ Whether you’re automating real estate workflows, building private GPT-powered 
 #### Clone the Repository
 
 ```bash
-git clone https://github.com/deal-scale/n8n-self-hosted-python.git
-cd n8n-self-hosted-python
-cp .env.example .env
+git clone https://github.com/Deal-Scale/sales-n8n-instance.git
+cd sales-n8n-instance
+# Create .env file (see SETUP.md or use scripts/create-env.sh)
 ```
 
 > Update secrets and credentials in `.env` before running.
@@ -103,14 +103,19 @@ docker compose --profile cpu up -d
 ### 🧰 Folder Structure
 
 ```
-n8n-self-hosted-python/
-├── docker-compose.yml       # Core stack (n8n + PostgreSQL + Ollama + Qdrant)
-├── Dockerfile                # Custom image with Python + dependencies
-├── requirements.txt          # Curated Python libs for AI workflows
-├── .env.example              # Config template (copy → .env)
-├── backup/                   # Automated backup + restore scripts
-├── nodes/                    # Custom DealScale node packages
-└── README.md                 # You’re here
+sales-n8n-instance/
+├── docker-compose.yml          # Core stack (n8n + PostgreSQL + Ollama + Qdrant + Traefik)
+├── n8n/
+│   ├── Dockerfile              # Custom n8n image with Python 3.12+ + dependencies
+│   ├── requirements.txt        # Curated Python libs for AI workflows
+│   └── community-nodes.json    # Community nodes configuration
+├── traefik/                    # Reverse proxy configuration
+├── scripts/                    # Backup, restore, and utility scripts
+├── _docs/                      # Comprehensive documentation
+├── _debug/                     # Test workflows and validation scripts
+├── tests/                      # Test suite for all sprints
+├── SETUP.md                    # Environment setup guide
+└── README.md                   # You're here
 ```
 
 ---
@@ -171,6 +176,24 @@ docker compose create && docker compose up -d
 * Autonomous workflows using CRM, voice cloning, and data enrichment
 * Multi-tenant setup with RBAC (Role-Based Access Control)
 * Integration with Kestra, Make, or Zapier for cross-system orchestration
+
+---
+
+### 📊 Implementation Status
+
+| User Story | Epic | Sprint | Priority | Status | Points | Acceptance Criteria |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Deploy n8n + persistent DB** | Self-Hosted n8n Platform Deployment & Customization | Sprint 1 | 🔥 Critical | ✅ **Done** | 8 | UI accessible, workflows persist after restart |
+| **Secure behind reverse proxy** | Self-Hosted n8n Platform Deployment & Customization | Sprint 1 | 🔐 High | ✅ **Done** | 5 | HTTPS active, requires login |
+| **Embed Python runtime** | Self-Hosted n8n Platform Deployment & Customization | Sprint 2 | 🧠 Critical | ✅ **Done** | 8 | Python 3.12+, can run `import pandas`, `import openai` |
+| **Decoupled custom nodes repo** | Self-Hosted n8n Platform Deployment & Customization | Sprint 2 | 🧩 High | ✅ **Done** | 13 | Custom node package installed successfully |
+| **Webhook/API integration** | Self-Hosted n8n Platform Deployment & Customization | Sprint 2 | 🌐 High | ✅ **Done** | 5 | Webhook triggers workflow with valid payload |
+| **Scalable worker mode** | Self-Hosted n8n Platform Deployment & Customization | Sprint 3 | ⚙️ High | ✅ **Done** | 8 | Execution offloaded to worker instance |
+| **Backup/recovery automation** | Self-Hosted n8n Platform Deployment & Customization | Sprint 3 | 🗄️ High | ✅ **Done** | 5 | Backup runs successfully and is stored externally |
+
+**All epic requirements completed!** ✅
+
+Verify implementation: `./scripts/verify-implementation.sh`
 
 ---
 
