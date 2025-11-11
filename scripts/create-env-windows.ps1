@@ -54,6 +54,20 @@ NPM_TOKEN=
 # OpenRouter API (for LLM model access - optional but recommended)
 # Get your key from: https://openrouter.ai/keys
 OPENROUTER_API_KEY=
+
+# AWS S3 Backup Configuration (optional)
+# For automated backup uploads to S3
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_BUCKET=
+AWS_REGION=us-east-1
+
+# MinIO Configuration (optional - local S3-compatible storage)
+# Enable with: docker compose --profile minio up -d
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_BUCKET=n8n-backups
+MINIO_ENDPOINT_URL=http://minio:9000
 "@
 
 $envContent | Out-File -FilePath ".env" -Encoding utf8 -NoNewline
