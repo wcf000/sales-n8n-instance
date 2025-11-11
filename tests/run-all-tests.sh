@@ -77,6 +77,9 @@ run_sprint_test "Sprint 10: Workflow Enhancements" "tests/sprint10/test-workflow
 # Run Enhancement Plan Sprint 11 tests
 run_sprint_test "Sprint 11: Pulsar Bridge & Integrations" "tests/sprint11/test-pulsar-integrations.sh"
 
+# Run Integration Tests (pgvector, GraphQL, REST)
+run_sprint_test "Integrations: pgvector, GraphQL, REST" "tests/integrations/test-pgvector-graphql-rest.sh"
+
 # Epic-level integration tests
 echo -e "${BLUE}Running Epic Integration Tests...${NC}"
 echo "----------------------------------------"
