@@ -184,6 +184,7 @@ docker compose create && docker compose up -d
 * 🚀 [Quick Start Guide](_docs/QUICKSTART.md) - Get started in minutes
 * 🧑‍💻 [Local Development Guide](_docs/LOCAL_DEVELOPMENT.md) - Development setup
 * ✅ [Implementation Status](_docs/COMPLETION_STATUS.md) - Feature completion status
+* 🎯 [Enhancement Plan](_docs/ENHANCEMENT_PLAN.md) - Next phase roadmap (Sprints 4-11)
 
 ### 📖 Recommended Reading
 
