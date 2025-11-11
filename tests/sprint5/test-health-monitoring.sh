@@ -3,7 +3,8 @@
 # Test Suite: Sprint 5 - Base Image & Health Monitoring
 # Tests for health checks, Prometheus metrics, and Grafana dashboards
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'
