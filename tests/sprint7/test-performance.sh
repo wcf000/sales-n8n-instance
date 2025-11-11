@@ -3,7 +3,8 @@
 # Test Suite: Sprint 7 - Performance Optimizations
 # Tests for resource limits, execution pruning, and database indexes
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'

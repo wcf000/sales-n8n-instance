@@ -3,7 +3,8 @@
 # Test Suite: Sprint 6 - Security & Access Enhancements
 # Tests for reverse proxy, environment separation, secret vault, and audit logging
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'

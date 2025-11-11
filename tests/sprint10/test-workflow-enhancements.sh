@@ -3,7 +3,8 @@
 # Test Suite: Sprint 10 - Workflow Engine Enhancements
 # Tests for retry logic, parallelization, Python sandbox, and Redis caching
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'

@@ -3,7 +3,8 @@
 # Test Suite: Sprint 11 - DealScale-Specific Integrations (Pulsar Bridge)
 # Tests for Pulsar bridge architecture, worker topology, security, observability, and integrations
 
-set -e
+# Don't exit on error - we want to count all tests
+set +e
 
 # Colors for output
 RED='\033[0;31m'
