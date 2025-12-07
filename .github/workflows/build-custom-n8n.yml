@@ -7,7 +7,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: wcf88/sales-n8n-instance
+  OWNER: ${{ github.repository_owner }}
+  IMAGE_NAME: sales-n8n-instance
   IMAGE_TAG: python-whitelabel-latest
 
 jobs:
@@ -30,9 +31,9 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
+          username: ${{ env.OWNER }}
+          password: ${{ secrets.GHCR_PAT }}
+      
       - name: Build and push image
         uses: docker/build-push-action@v5
         with:
@@ -40,10 +41,10 @@ jobs:
           file: ./n8n/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           provenance: false
-
+    
   deploy-to-cluster:
     name: Deploy to Hetzner K8s
     needs: build-and-push
