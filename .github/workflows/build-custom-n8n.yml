@@ -1,26 +1,30 @@
-name: Build & Publish Custom n8n Image
+name: Build & Deploy Custom n8n
 
 on:
   push:
-    branches: [ main ]      # or "master" if that’s your default
-  workflow_dispatch:
+    branches: [ main ]
+  workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/sales-n8n-instance
+  IMAGE_NAME: wcf88/sales-n8n-instance
   IMAGE_TAG: python-whitelabel-latest
 
 jobs:
   build-and-push:
+    name: Build & Push custom n8n image
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      packages: write   # needed to push to GHCR
+      packages: write
 
     steps:
-      - name: Checkout repo
+      - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -29,12 +33,70 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push custom n8n image
+      - name: Build and push image
         uses: docker/build-push-action@v5
         with:
-          context: ./n8n              # Dockerfile + requirements + whitelabel live here
+          context: ./n8n
           file: ./n8n/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          provenance: false
+
+  deploy-to-cluster:
+    name: Deploy to Hetzner K8s
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+
+    env:
+      NAMESPACE: n8n
+      DEPLOYMENT: n8n
+      CONTAINER: n8n
+      IMAGE_REF: ghcr.io/wcf88/sales-n8n-instance:python-whitelabel-latest
+
+    steps:
+      - name: Install kubectl
+          # version can match your cluster; 1.29 is usually fine
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.29.0
+
+      - name: Configure kubeconfig
+        env:
+          KUBE_CONFIG_B64: ${{ secrets.KUBE_CONFIG_B64 }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$KUBE_CONFIG_B64" | base64 -d > "$HOME/kubeconfig"
+          chmod 600 "$HOME/kubeconfig"
+          echo "KUBECONFIG=$HOME/kubeconfig" >> "$GITHUB_ENV"
+          kubectl config view --minify
+
+      - name: Check current n8n deployment
+        run: |
+          kubectl -n "$NAMESPACE" get deploy "$DEPLOYMENT" -o wide
+
+      - name: Update n8n image to custom build
+        run: |
+          set -euo pipefail
+
+          echo "Setting image on $NAMESPACE/$DEPLOYMENT container $CONTAINER to $IMAGE_REF"
+          kubectl -n "$NAMESPACE" set image deploy/"$DEPLOYMENT" \
+            "$CONTAINER"="$IMAGE_REF"
+
+          echo "Waiting for rollout..."
+          kubectl -n "$NAMESPACE" rollout status deploy/"$DEPLOYMENT" --timeout=300s
+
+      - name: Post-rollout sanity check
+        if: always()
+        run: |
+          echo "=== Pods ==="
+          kubectl -n "$NAMESPACE" get pods -l app="$DEPLOYMENT" -o wide || \
+            kubectl -n "$NAMESPACE" get pods -o wide
+          echo "=== Events (tail) ==="
+          kubectl -n "$NAMESPACE" get events --sort-by='.lastTimestamp' | tail -n 30 || true
