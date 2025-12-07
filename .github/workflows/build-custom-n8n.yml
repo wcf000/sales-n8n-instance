@@ -75,7 +75,11 @@ jobs:
           set -euo pipefail
           printf '%s' "$KUBE_CONFIG_B64" | base64 -d > "$HOME/kubeconfig"
           chmod 600 "$HOME/kubeconfig"
+      
+          # make it available now AND in later steps
+          export KUBECONFIG="$HOME/kubeconfig"
           echo "KUBECONFIG=$HOME/kubeconfig" >> "$GITHUB_ENV"
+      
           kubectl config view --minify
 
       - name: Check current n8n deployment
