@@ -59,7 +59,7 @@ jobs:
       NAMESPACE: n8n
       DEPLOYMENT: n8n
       CONTAINER: n8n
-      IMAGE_REF: ghcr.io/wcf88/sales-n8n-instance:python-whitelabel-latest
+      IMAGE_REF: ghcr.io/wcf000/sales-n8n-instance:python-whitelabel-latest
 
     steps:
       - name: Install kubectl
